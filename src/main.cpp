@@ -4,7 +4,8 @@
 // Define the connections pins
 #define CLK D1
 #define DIO D2
-#define interval 100
+#define interval 1000
+#define Delay 1000
 TM1637Display display(CLK, DIO); // Create an instance of the TM1637Display
 
 uint8_t dot = 0b01000000; // :
@@ -75,7 +76,7 @@ class Timer{
     
   }
 
-  void Pause(){
+  void togglePause(){
     pause = !pause; //toggle pause
   }  
 
@@ -93,26 +94,24 @@ void loop() {
 
   bool pause_timer = false;   //reset every loop
   static long lastPress = 0;  
-  static int Delay = 1000;    //ms
   static Timer timer;         //init a timer
 
   
   int buttonState = digitalRead(D3);
   if (buttonState == LOW){pause_timer=true;} //check for button press and cahnge pause
 
+  if (pause_timer && (millis() - lastPress) >= Delay){  //if button pressed(pause timer true) and button wasnt pressed in last Delay secs
+      timer.togglePause();
+      lastPress = millis();   //update last press time
+    }
+
   
-  if (millis() - counter >= interval){  //runs every interval ms or pause is activated
+  if (millis() - counter >= interval){  //runs every interval ms
     counter += interval;
     
     timer.showTime();  //show time in lcd
     timer.update();   //add 1sec to timer
 
     Time currentTime = timer.getTime();
-
-    if (pause_timer && (millis() - lastPress) >= Delay){  //if button pressed(pause timer true) and button wasnt pressed in last Delay secs
-      timer.Pause();
-      lastPress = millis();   //update last press time
-    }
-
 };
 }
