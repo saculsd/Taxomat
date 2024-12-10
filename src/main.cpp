@@ -1,12 +1,23 @@
 #include <Arduino.h>
 #include <TM1637Display.h>
-
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+     
 // Define the connections pins
-#define CLK D1
-#define DIO D2
-#define interval 1000
-#define Delay 1000
+#define DIO D3    
+#define CLK D4  //7seg pins
+
+#define BTN D5  //button Pin
+#define SPK D6  //speaker pin
+
+#define interval 100    //timer update interval 
+#define Delay 1000      //button press Delay
+
 TM1637Display display(CLK, DIO); // Create an instance of the TM1637Display
+
+LiquidCrystal_I2C lcd(0x27, 16, 2); //init lcd display kind 16rows 2lanes 
+
+Timer timer;
 
 uint8_t dot = 0b01000000; // :
 uint8_t letter_h[]{     
@@ -28,7 +39,7 @@ class Timer{
     int seconds = 0;
     int minutes = 0;
     int hours = 0;
-    bool pause = false;
+    bool pause = true;  //standart true to wait for start
 
   public:
   Timer(int seconds, int minutes, int hours):       //init variables
@@ -83,22 +94,55 @@ class Timer{
 };
 
 
+class Speaker{
+  protected:
+
+  public:
+  void playTone(){
+  }
+  
+};
+
+
+class Display{
+  protected:
+    Timer* timer;
+
+  public:
+    Display();
+
+  void startup(){
+    lcd.init();
+    lcd.backlight();
+    lcd.setCursor(0,0);
+    lcd.print("Test");
+    delay(1000);
+    timer.togglePause();
+
+
+  }
+};
+
+
+
 void setup() {
   display.setBrightness(3);  // Set the display brightness (0-7)
   display.clear();
-  pinMode(D3, INPUT);
+  pinMode(BTN, INPUT_PULLUP);
+
+
+  Display dp;  //init Diaply class
+  dp.startup();       //run LCD start sequence
 };
 
 
 void loop() { 
 
-  bool pause_timer = false;   //reset every loop
   static long lastPress = 0;  
-  static Timer timer;         //init a timer
+  bool pause_timer = false;   //reset every loop
 
-  
-  int buttonState = digitalRead(D3);
-  if (buttonState == LOW){pause_timer=true;} //check for button press and cahnge pause
+  int buttonState = digitalRead(BTN);
+  if (buttonState == HIGH){pause_timer=true;} //check for button press and cahnge pause
 
   if (pause_timer && (millis() - lastPress) >= Delay){  //if button pressed(pause timer true) and button wasnt pressed in last Delay secs
       timer.togglePause();
@@ -114,4 +158,4 @@ void loop() {
 
     Time currentTime = timer.getTime();
 };
-}
+};
