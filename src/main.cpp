@@ -2,6 +2,7 @@
 #include <TM1637Display.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
+#include <string>
      
 // Define the connections pins
 #define DIO D3    
@@ -17,7 +18,6 @@ TM1637Display display(CLK, DIO); // Create an instance of the TM1637Display
 
 LiquidCrystal_I2C lcd(0x27, 16, 2); //init lcd display kind 16rows 2lanes 
 
-Timer timer;
 
 uint8_t dot = 0b01000000; // :
 uint8_t letter_h[]{     
@@ -94,11 +94,16 @@ class Timer{
 };
 
 
+
 class Speaker{
   protected:
 
   public:
-  void playTone(){
+
+  void playTone(int sound_height, int length){
+    tone(SPK, sound_height);
+    delay(length);
+    noTone(SPK);
   }
   
 };
@@ -107,37 +112,52 @@ class Speaker{
 class Display{
   protected:
     Timer* timer;
+    Speaker speaker;
 
   public:
-    Display();
+    Display() = default;
+    Display(Timer* timer) : timer(timer){}
 
   void startup(){
+    std::string greeting = "Hello! TAXOMAT";
+    int length = greeting.length();
+
     lcd.init();
     lcd.backlight();
-    lcd.setCursor(0,0);
-    lcd.print("Test");
-    delay(1000);
-    timer.togglePause();
 
-
+    speaker.playTone(1000, 1000); //play 1Khz sound for 1s
+    
+    for(int i=0; i<length ; i++){          //!startup procedure to display greeting
+      lcd.setCursor(( 7+length/2 )-i, 0); //to center always (7is middle)  
+      
+      for(int x=0; x<i+1; x++){
+      lcd.print(greeting[x]);
+      }
+      
+      delay(300); //300ms between every letter
+    }
+    
+    delay(2000);
+    lcd.clear();
   }
 };
 
+Timer timer;
 
+void setup() { 
+  pinMode(BTN, INPUT_PULLUP);
+  pinMode(SPK, OUTPUT);
 
-void setup() {
   display.setBrightness(3);  // Set the display brightness (0-7)
   display.clear();
-  pinMode(BTN, INPUT_PULLUP);
 
-
-  Display dp;  //init Diaply class
+  Display dp(&timer);  //init Diaply class
   dp.startup();       //run LCD start sequence
 };
 
 
 void loop() { 
-
+  
   static long lastPress = 0;  
   bool pause_timer = false;   //reset every loop
 
