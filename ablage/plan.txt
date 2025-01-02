@@ -1,0 +1,17 @@
+-Menu mit onebutton libary steuern
+-Kostenberechung live auf lcd anzeigen
+-Helligkeit über menu ändern und bestenfalls speichern
+-Start Stopp funktion mit LCD verbinden 
+-generell menu strucktur bauen
+
+
+-mehrere Währungen, zb Döner
+
+
+if (press_detected && (millis() - lastPress) >= Delay){  //if button pressed(pause timer true) and button wasnt pressed in last Delay secs
+      
+
+
+      
+      lastPress = millis();   //update last press time
+  }
