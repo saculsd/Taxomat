@@ -3,7 +3,6 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include <string>
-#include <OneButton.h>
      
 // Define the connections pins
 #define DIO D3    
@@ -13,7 +12,7 @@
 #define SPK D6  //speaker pin
 #define PIN_INPUT 0
 
-#define interval 100    //timer update interval 
+#define interval 1000    //timer update interval 
 #define Delay 1000      //button press Delay
 
 TM1637Display display(CLK, DIO); // Create an instance of the TM1637Display
@@ -133,12 +132,20 @@ class Display{
 
   public:
     Display() = default;
-    Display(Timer* timer) : timer(timer){}
+    Display(Timer* timer):timer(timer){
+      if (this->timer == nullptr) {
+        // Optional: Fehlerbehandlung, falls kein Timer übergeben wurde
+        lcd.init();
+        lcd.backlight();
+        lcd.print("ERROR NULLPNTR");
+        delay(2000);
+      }
+    }
 
   void startup(){
     std::string greeting = "te";
     int length = greeting.length();
-
+    
     lcd.init();
     lcd.backlight();
 
@@ -169,6 +176,14 @@ class Display{
     }
 
     
+  }
+
+  void timerStart(){
+    lcd.clear();
+    lcd.print("Timer gestartet");
+    //timer->reset();
+    //timer->togglePause();
+
   }
 
 };
@@ -261,6 +276,18 @@ void checkButton(bool press_detected){
       if (millis() - lastPress >= 2000){ //dafür sorgen das nur einmal nach 2000ms ausgeführt wird
         Speaker().playTone(800, 300);
 
+        switch (active_page)
+        {
+        case 1:
+          display.timerStart(); 
+          break;
+        
+        default:
+          break;
+        
+        }
+
+
         during_press = false;
         lastPress = millis();
         
@@ -297,6 +324,7 @@ void checkButton(bool press_detected){
 
 
 Timer timer;    //Init Timer Class
+Display dp(&timer); //init Diaply class timer pointer übergeben
 
 void setup() { 
   pinMode(BTN, INPUT_PULLUP);
@@ -305,7 +333,8 @@ void setup() {
   display.setBrightness(3);  // Set the display brightness (0-7)
   display.clear();
 
-  Display dp(&timer);  //init Diaply class timer pointer übergeben
+  
+
   dp.startup();       //run LCD start sequence
   timer.startup();
 
