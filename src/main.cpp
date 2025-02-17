@@ -35,7 +35,7 @@ struct Time //Time tuple to accses time out of timer
 
 
 
-class Timer{
+class Timer{  //7SEG
   protected:
     int seconds = 0;
     int minutes = 0;
@@ -85,7 +85,7 @@ class Timer{
     this->seconds = 0;
     this->minutes = 0;
     this->hours = 0;
-    display.clear();
+    display.showNumberDec(0000);
   }
 
   void update(){    //!when called, it updates 1sec of timer
@@ -125,7 +125,7 @@ class Speaker{
 };
 
 
-class Display{
+class Display{  //LCD
   protected:
     Timer* timer;
     Speaker speaker;
@@ -143,7 +143,7 @@ class Display{
     }
 
   void startup(){
-    std::string greeting = "te";
+    std::string greeting = " Louis Ya Nutten";
     int length = greeting.length();
     
     lcd.init();
@@ -179,19 +179,20 @@ class Display{
   }
 
   void timerStart(){
-    lcd.clear();
-    lcd.print("Timer gestartet");
-    //timer->reset();
-    //timer->togglePause();
+    
+    timer->reset();
+    timer->togglePause();
 
   }
-
+  void timerPause(){
+    timer->togglePause();
+  }
 };
 
 
 class Menu{
 private:
-  Display display;
+  Display* display;
 
   bool short_press = false;
   bool long_press = false;
@@ -201,11 +202,12 @@ private:
   char* bottomText;
   int active_page;
   long lastPress = 0;  
-  
+
+  bool timer_active = false;
 
 public:
 
-  Menu(){
+  Menu(Display* display) :display(display){ //Menu mit pointer zu globelaen dp klasse initialisierren
     //init Menu on LCD
     this -> page1();
   }
@@ -214,7 +216,7 @@ void page1(){
   topText = "Taxomat starten?";
   bottomText = "<1>"; //12
 
-  display.showText(topText, 0, bottomText, 13);
+  display->showText(topText, 0, bottomText, 13);
   active_page = 1;
 }
 
@@ -222,7 +224,7 @@ void page2(){
   topText = " Helligkeit"; //1
   bottomText = " einstellen? <2>"; //0
 
-  display.showText(topText, 1, bottomText, 0);
+  display->showText(topText, 1, bottomText, 0);
   active_page = 2;
 }
 
@@ -230,7 +232,17 @@ void page3(){
   topText = " Waehrung"; //1
   bottomText = " einstellen? <3>"; //0
 
-  display.showText(topText, 1, bottomText, 0);
+  display->showText(topText, 1, bottomText, 0);
+  active_page = 3;
+}
+
+void TimerPage(){
+  lcd.clear();
+
+  topText = "Kosten:"; //1
+  bottomText = "Waehrung Doener"; //0
+
+  display->showText(topText, 3, bottomText, 0);
   active_page = 3;
 }
 
@@ -276,15 +288,22 @@ void checkButton(bool press_detected){
       if (millis() - lastPress >= 2000){ //dafür sorgen das nur einmal nach 2000ms ausgeführt wird
         Speaker().playTone(800, 300);
 
-        switch (active_page)
+        switch (active_page)  //if press detected select active page and run logic
         {
         case 1:
-          display.timerStart(); 
+          display->timerStart();
+          TimerPage();
+          timer_active = true;
+          active_page = 0;
           break;
         
         default:
           break;
         
+        }
+        
+        if (timer_active){
+          //logic to stop
         }
 
 
@@ -307,7 +326,14 @@ void checkButton(bool press_detected){
 
   else if (!press_detected && during_press && !long_press){
     //short press detected
+    if (!timer_active){
     this -> nextPage();
+    }
+
+    else{
+    display->timerPause();
+    }
+
 
     during_press = false;
     lastPress = 0;
@@ -333,16 +359,14 @@ void setup() {
   display.setBrightness(3);  // Set the display brightness (0-7)
   display.clear();
 
-  
-
-  dp.startup();       //run LCD start sequence
+  dp.startup();
   timer.startup();
 
 };
 
 
 void loop() { 
-  static Menu menu; //init menu
+  static Menu menu(&dp); //init menu
   
   bool press_detected = false;   //reset every loop
 
