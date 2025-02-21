@@ -104,6 +104,7 @@ class Timer{  //7SEG
           lcd.setCursor(15,0);
           lcd.print(" ");
         }
+
     }
     else if (timer_active){ //wenn timer pausiert und im timer mode dann p blinken
       PauseBlink();
@@ -153,6 +154,8 @@ class Display{  //LCD
   protected:
     Timer* timer;
     Speaker speaker;
+
+    float pay_val = 9.5;
 
   public:
     Display() = default;
@@ -211,7 +214,29 @@ class Display{  //LCD
   void timerPause(){
     timer->togglePause();
   }
+  
+  void showValue(){ //show money to pay on screen
+    Time currentTime = timer->getTime();
+    // calc to pay 
+    float rate = 0.1; //€
+    int curserpos = 4;
 
+    if (currentTime.hours > 0){
+      pay_val = (currentTime.minutes+60) * rate;
+    }
+    else{
+      pay_val = currentTime.minutes * rate;
+    }
+
+    lcd.setCursor(9,1);
+    lcd.print("Eur.");
+    
+    if (pay_val >= 10){curserpos--;}  
+    
+    lcd.setCursor(curserpos, 1);
+    lcd.print(pay_val);
+
+  }
   
 };
 
@@ -268,9 +293,8 @@ void TimerPage(){
   lcd.clear();
 
   topText = "Kosten:"; //1
-  bottomText = "Waehrung Doener"; //0
 
-  display->showText(topText, 1, bottomText, 0);
+  display->showText(topText, 5);
   active_page = 3;
 }
 
@@ -418,7 +442,10 @@ void loop() {
     timer.showTime();  //show time in 7seg display
     timer.update(menu.timer_active);   //add 1sec to timer
 
-    Time currentTime = timer.getTime();
+    if (menu.timer_active){
+      dp.showValue();
+    }
+
 };
 };
 
